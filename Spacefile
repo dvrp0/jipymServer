@@ -4,6 +4,8 @@ micros:
   - name: jipym-server
     src: ./src
     engine: python3.9
+    public_routes:
+      - "/essays"
     presets:
       env:
         - name: HUGGINGFACE_TOKEN
