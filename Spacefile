@@ -8,9 +8,24 @@ micros:
       env:
         - name: HUGGINGFACE_TOKEN
           description: Token for accessing Huggingface Inference API
+        - name: GENERATION_TOP_K
+          description: Top-k for generation
+        - name: GENERATION_TOP_P
+          description: Top-p for generation
+        - name: GENERATION_TEMPERATURE
+          description: Temperature for generation
+        - name: GENERATION_REPETITION_PENALTY
+          description: Repetition penalty for generation
+        - name: GENERATION_MAX_LENGTH
+          description: Max length for generation
     actions:
-      - id: "generate"
-        name: "Generate"
+      - id: "pregeneration"
+        name: "Pregeneration"
+        description: "Loads a EssayGPT2 model before generating"
+        trigger: "schedule"
+        default_interval: "59 20 * * *"
+      - id: "generation"
+        name: "Generation"
         description: "Generates a new essay"
         trigger: "schedule"
-        default_interval: "0 9 * * *"
+        default_interval: "0 21 * * *"

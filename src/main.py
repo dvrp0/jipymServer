@@ -1,4 +1,4 @@
-import json, os, random, requests
+import os, random, re, requests
 from action import Action
 from datetime import datetime
 from deta import Deta
@@ -30,16 +30,15 @@ GENERATE_HEADERS = {
 GENERATE_DATA = {
     "inputs": "",
     "parameters": {
-        "top_k": 95,
-        "top_p": 0.95,
-        "temperature": 1.2,
-        "repetition_penalty": 2.0,
-        "max_length": 80,
+        "top_k": int(os.environ["GENERATION_TOP_K"]),
+        "top_p": float(os.environ["GENERATION_TOP_P"]),
+        "temperature": float(os.environ["GENERATION_TEMPERATURE"]),
+        "repetition_penalty": float(os.environ["GENERATION_REPETITION_PENALTY"]),
+        "max_length": int(os.environ["GENERATION_MAX_LENGTH"]),
         "do_sample": True
     },
     "options": {
-        "use_cache": False,
-        "wait_for_model": True
+        "use_cache": False
     }
 }
 
@@ -53,36 +52,40 @@ def generate(toked: str) -> Optional[str]:
     GENERATE_DATA["inputs"] = toked
     response = requests.post(GENERATE_URL, json=GENERATE_DATA, headers=GENERATE_HEADERS)
 
-    return response.json()[0]["generated_text"] if response.status_code == 200 else None
+    if response.status_code == 200:
+        essay = response.json()[0]["generated_text"]
+        return "".join(re.split(r"((?:[.]|[?]|!){1}\s?)", essay)[:-1]).strip()
+    else:
+        return None
 
 @app.post("/__space/v0/actions")
 def post_actions(action: Action):
-    if action.event.id == "generate":
+    if action.event.id == "pregeneration":
+        requests.post(GENERATE_URL, headers=GENERATE_HEADERS)
+        print("Loading a model");
+    elif action.event.id == "generation":
         toked = get_random_input()
         essay = generate(toked)
 
         if essay:
             db.put(data={"input": toked, "body": essay[len(toked) + 1:]}, key=datetime.now(timezone("Asia/Seoul")).strftime("%Y%m%d"))
+            print("Successfully generated")
 
 @app.get("/essays")
 def get_essays(date: Optional[str] = None, limit: int = 30):
-    items = db.fetch().items
+    items = next(db.fetch())
 
     if date:
         for item in items:
-            if item["date"] == date:
+            if item["key"] == date:
                 return item
     else:
         return items[::-1][:limit]
 
     return None
 
-@app.get("/test-generation")
-def test_generation():
+@app.get("/regenerate-essay")
+def regenerate_essay(date: str):
     toked = get_random_input()
     essay = generate(toked)
-
-    if essay:
-        return {"input": toked, "body": essay[len(toked) + 1:], "key": datetime.now(timezone("Asia/Seoul")).strftime("%Y%m%d")}
-    else:
-        return None
+    db.update({"input": toked, "body": essay[len(toked) + 1]}, date)
