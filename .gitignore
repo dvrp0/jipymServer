@@ -1,0 +1,5 @@
+.space
+/venv
+/src/__pycache__
+crawl.py
+test.py
