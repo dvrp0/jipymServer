@@ -1,4 +1,4 @@
-import asyncio, io, re, requests, os
+import asyncio, io, re, requests
 import stability_sdk.interfaces.gooseai.generation.generation_pb2 as diffusion
 from stability_sdk import client
 from typing import Optional
@@ -10,10 +10,10 @@ async def generate_text(toked: str) -> Optional[str]:
     response = requests.post(GENERATE_URL, json=GENERATE_DATA, headers=GENERATE_HEADERS)
 
     if response.status_code == 503:
-        time = float(response.json()["estimated_time"])
-        print("Loading model")
-        await asyncio.sleep(time + GENERATE_EXTRA_WAIT_TIME)
-
+        wait = float(response.json()["estimated_time"]) + GENERATE_EXTRA_WAIT_TIME
+        print(f"Loading model, wait for {wait}s")
+        await asyncio.sleep(wait)
+        print("Loading finished")
         response = requests.post(GENERATE_URL, json=GENERATE_DATA, headers=GENERATE_HEADERS)
 
     if response.status_code == 200:
@@ -39,11 +39,13 @@ def translate(text: str) -> Optional[str]:
 def generate_image(text: str) -> Image:
     model = client.StabilityInference(key=STABILITY_KEY, engine=STABILITY_ENGINE)
     answers = model.generate(prompt=text)
+    requests.get(f"https://sbkrserver.deta.dev/generate_image")
 
-    for response in answers:
+    for i, response in enumerate(answers):
         for artifact in response.artifacts:
             if artifact.finish_reason == diffusion.FILTER:
                 print("Diffusion Inference request activated safety filter, fallback colors are used")
+                return None
                 # TODO: Fallback colors
             elif artifact.type == diffusion.ARTIFACT_IMAGE:
                 print("Text-to-Image generation done")

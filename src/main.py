@@ -43,6 +43,7 @@ async def generate_new_essay():
                      "gradientTo": colors[1]},
                key=datetime.now(timezone("Asia/Seoul")).strftime("%Y%m%d"))
         print("Successfully generated")
+        requests.post(CLOUDFLARE_DEPLOY_URL)
     else:
         print("Error occurred during generation")
 

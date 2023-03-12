@@ -34,6 +34,8 @@ micros:
           description: Engine for Stability Text-to-Image API
         - name: PALETTE_COLORS
           description: Palette color counts for background gradient
+        - name: CLOUDFLARE_DEPLOY_URL
+          description: URL for triggering Cloudflare Pages deploy hook
     actions:
       - id: "generation"
         name: "Generation"
