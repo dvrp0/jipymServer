@@ -37,6 +37,11 @@ micros:
         - name: CLOUDFLARE_DEPLOY_URL
           description: URL for triggering Cloudflare Pages deploy hook
     actions:
+      - id: "pregeneration"
+        name: "Pregeneration"
+        description: "Warms up a model before generate"
+        trigger: "schedule"
+        default_interval: "59 20 * * *"
       - id: "generation"
         name: "Generation"
         description: "Generates a new essay"
